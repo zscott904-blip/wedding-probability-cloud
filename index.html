@@ -263,6 +263,11 @@
       return height * 0.37;
     }
 
+    function cloudCenterPull() {
+      const visibleStep = Math.min(stepIndex, 5);
+      return visibleStep * 0.08;
+    }
+
     function makeProgress() {
       progress.innerHTML = "";
       steps.forEach((_, index) => {
@@ -483,8 +488,9 @@
     function updateBall(ball, time) {
       if (ball.state === "cloud") {
         const zoom = cloudZoom();
-        const zoomedBaseX = width / 2 + (ball.baseX - width / 2) * zoom;
-        const zoomedBaseY = cloudCenterY() + (ball.baseY - cloudCenterY()) * zoom;
+        const pull = cloudCenterPull();
+        const zoomedBaseX = width / 2 + (ball.baseX - width / 2) * zoom * (1 - pull);
+        const zoomedBaseY = cloudCenterY() + (ball.baseY - cloudCenterY()) * zoom * (1 - pull);
         const driftX = Math.sin(time * ball.driftSpeedX + ball.phase) * ball.driftAmpX;
         const driftY = Math.cos(time * ball.driftSpeedY + ball.phase) * ball.driftAmpY;
         ball.x += (zoomedBaseX + driftX - ball.x) * 0.018 + ball.vx;
