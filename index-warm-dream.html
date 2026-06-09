@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>P(我们相遇)</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif;
+      color: #26231f;
+      background: #f5f1e8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+      margin: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      overflow-x: hidden;
+      background:
+        radial-gradient(circle at 12% 16%, rgba(250, 185, 149, 0.34), transparent 30%),
+        radial-gradient(circle at 86% 12%, rgba(129, 190, 204, 0.28), transparent 32%),
+        radial-gradient(circle at 50% 78%, rgba(244, 203, 129, 0.24), transparent 34%),
+        linear-gradient(155deg, #fff4e5 0%, #e8f5f8 42%, #f9e9f0 76%, #fff7ea 100%);
+    }
+
+    .app {
+      position: relative;
+      width: 100%;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .cloud-stage {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse at 50% 34%, rgba(255, 255, 255, 0.5), transparent 54%),
+        radial-gradient(circle at 48% 42%, rgba(255, 240, 213, 0.32), transparent 48%),
+        radial-gradient(circle at 60% 28%, rgba(219, 246, 255, 0.28), transparent 42%);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100vh;
+      touch-action: manipulation;
+    }
+
+    .stat-pill {
+      position: absolute;
+      top: max(18px, env(safe-area-inset-top));
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 34px;
+      padding: 8px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 999px;
+      background: rgba(255, 252, 246, 0.18);
+      color: rgba(64, 79, 82, 0.72);
+      font-size: 13px;
+      white-space: nowrap;
+      backdrop-filter: blur(18px);
+      box-shadow: 0 12px 38px rgba(76, 62, 43, 0.04);
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #d7a642;
+      box-shadow: 0 0 14px rgba(219, 175, 82, 0.9);
+    }
+
+    .panel {
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      bottom: max(14px, env(safe-area-inset-bottom));
+      padding: 8px 4px 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      backdrop-filter: none;
+      text-align: center;
+      text-shadow: 0 1px 20px rgba(255, 255, 255, 0.82);
+    }
+
+    .step-label {
+      margin: 0 0 8px;
+      color: rgba(128, 80, 63, 0.58);
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .step-title {
+      margin: 0;
+      font-size: clamp(21px, 5.6vw, 32px);
+      line-height: 1.22;
+      letter-spacing: 0;
+      color: rgba(43, 38, 32, 0.84);
+    }
+
+    .step-copy {
+      min-height: 72px;
+      max-width: 620px;
+      margin: 12px auto 18px;
+      color: rgba(65, 59, 51, 0.72);
+      font-size: 16px;
+      line-height: 1.75;
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 13px;
+      max-width: 620px;
+      margin: 0 auto;
+    }
+
+    .progress {
+      display: flex;
+      gap: 7px;
+      justify-content: center;
+    }
+
+    .progress i {
+      width: 23px;
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(38, 35, 31, 0.1);
+    }
+
+    .progress i.active {
+      background: rgba(202, 109, 85, 0.58);
+    }
+
+    button {
+      min-height: 44px;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      border-radius: 999px;
+      padding: 0 20px;
+      background: rgba(38, 35, 31, 0.22);
+      color: rgba(255, 248, 238, 0.94);
+      font: inherit;
+      font-size: 16px;
+      cursor: pointer;
+      box-shadow: 0 12px 38px rgba(38, 35, 31, 0.06);
+      backdrop-filter: blur(16px);
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    @media (max-width: 420px) {
+      button {
+        width: auto;
+        max-width: 100%;
+      }
+    }
+
+    @media (min-width: 760px) {
+      .panel {
+        left: 50%;
+        right: auto;
+        width: min(720px, calc(100% - 56px));
+        transform: translateX(-50%);
+        padding: 10px 0 0;
+      }
+
+      .step-copy {
+        font-size: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="cloud-stage" aria-label="概率云互动动画">
+      <canvas id="probabilityCloud"></canvas>
+      <div class="stat-pill"><span class="dot"></span><span id="remainingText">样本空间：很多很多种可能</span></div>
+    </section>
+
+    <section class="panel">
+      <p class="step-label" id="stepLabel">Step 1 / 6</p>
+      <h1 class="step-title" id="stepTitle">还没有相遇之前</h1>
+      <p class="step-copy" id="stepCopy">我们各自拥有很多种人生路径：不同的城市、不同的时间、不同的选择，像云里漂浮的样本点。</p>
+      <div class="controls">
+        <div class="progress" id="progress" aria-hidden="true"></div>
+        <button id="nextButton" type="button">继续缩小样本空间</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.getElementById("probabilityCloud");
+    const ctx = canvas.getContext("2d");
+    const button = document.getElementById("nextButton");
+    const stepLabel = document.getElementById("stepLabel");
+    const stepTitle = document.getElementById("stepTitle");
+    const stepCopy = document.getElementById("stepCopy");
+    const progress = document.getElementById("progress");
+    const remainingText = document.getElementById("remainingText");
+
+    const steps = [
+      {
+        title: "还没有相遇之前",
+        copy: "我们各自拥有很多种人生路径：不同的城市、不同的时间、不同的选择，像云里漂浮的样本点。",
+        keep: 1,
+        label: "样本空间：很多很多种可能"
+      },
+      {
+        title: "我们都选择了统计",
+        copy: "当世界被看成分布、误差和可能性，有些轨迹开始拥有相似的坐标。",
+        keep: 0.72,
+        label: "条件一：同一门学科"
+      },
+      {
+        title: "我们出现在同一段时间",
+        copy: "早一点，晚一点，故事都会偏离。时间这个变量，刚好落在了同一个区间。",
+        keep: 0.5,
+        label: "条件二：同一段时间"
+      },
+      {
+        title: "两条轨迹靠近了",
+        copy: "在某个具体的地点，两个原本独立的随机变量，第一次有了交集。",
+        keep: 0.32,
+        label: "条件三：同一个交点"
+      },
+      {
+        title: "那一次回应没有错过",
+        copy: "有些小概率，不只靠发生，也靠被认真接住。于是一次对话，变成了新的样本路径。",
+        keep: 0.16,
+        label: "条件四：没有错过"
+      },
+      {
+        title: "最终，云里留下了我们",
+        copy: "在众多没有发生的人生里，有两个金色的可能性留了下来，并且慢慢走向彼此。",
+        keep: 0.02,
+        label: "结果：两个金色样本点"
+      }
+    ];
+
+    const palette = ["#ffffff", "#f8fbff", "#d7edf5", "#f2ddf0", "#f8e8d2", "#d8ece2", "#e7e2ff"];
+    const gold = ["#f6d36f", "#d9a83f"];
+    let width = 0;
+    let height = 0;
+    let dpr = 1;
+    let balls = [];
+    let stepIndex = 0;
+    let settleTick = 0;
+
+    function random(min, max) {
+      return min + Math.random() * (max - min);
+    }
+
+    function makeProgress() {
+      progress.innerHTML = "";
+      steps.forEach((_, index) => {
+        const item = document.createElement("i");
+        if (index <= stepIndex) item.classList.add("active");
+        progress.appendChild(item);
+      });
+    }
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      width = rect.width;
+      height = rect.height;
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (!balls.length) createCloud();
+      repositionCloud();
+    }
+
+    function createCloud() {
+      const count = width < 540 ? 340 : 560;
+      balls = [];
+      for (let i = 0; i < count; i += 1) {
+        const angle = random(0, Math.PI * 2);
+        const radius = Math.sqrt(Math.random());
+        const cloudX = Math.cos(angle) * radius * width * random(0.2, 0.46);
+        const cloudY = Math.sin(angle) * radius * height * random(0.1, 0.22);
+        const isGold = i < 2;
+        balls.push({
+          baseX: width / 2 + cloudX,
+          baseY: height * 0.37 + cloudY,
+          x: width / 2 + cloudX,
+          y: height * 0.37 + cloudY,
+          vx: random(-0.18, 0.18),
+          vy: random(-0.12, 0.12),
+          r: isGold ? random(7, 9) : random(3.6, 8.8),
+          color: isGold ? gold[i] : palette[Math.floor(random(0, palette.length))],
+          alpha: isGold ? 0.34 : random(0.5, 0.96),
+          phase: random(0, Math.PI * 2),
+          state: isGold ? "gold" : "cloud",
+          goldIndex: i,
+          fallSpeed: random(1.9, 4.8),
+          targetX: 0,
+          targetY: 0
+        });
+      }
+    }
+
+    function repositionCloud() {
+      balls.forEach((ball) => {
+        if (ball.state === "gone") return;
+        ball.baseX = Math.max(30, Math.min(width - 30, ball.baseX));
+        ball.baseY = Math.max(40, Math.min(height * 0.67, ball.baseY));
+      });
+    }
+
+    function updateContent() {
+      const step = steps[stepIndex];
+      stepLabel.textContent = `Step ${stepIndex + 1} / ${steps.length}`;
+      stepTitle.textContent = step.title;
+      stepCopy.textContent = step.copy;
+      remainingText.textContent = step.label;
+      button.textContent = stepIndex === steps.length - 1 ? "重新看一次" : "继续缩小样本空间";
+      makeProgress();
+    }
+
+    function dropToKeepRatio(keepRatio) {
+      const ordinary = balls.filter((ball) => ball.state === "cloud");
+      const totalOrdinary = balls.filter((ball) => ball.state !== "gold").length;
+      const shouldRemain = Math.max(0, Math.floor(totalOrdinary * keepRatio));
+      const currentRemain = ordinary.length;
+      const dropCount = Math.max(0, currentRemain - shouldRemain);
+      const shuffled = ordinary.sort(() => Math.random() - 0.5);
+
+      shuffled.slice(0, dropCount).forEach((ball) => {
+        ball.state = "falling";
+        ball.vx = random(-0.55, 0.55);
+        ball.vy = random(0.6, 1.8);
+        ball.alpha = Math.max(ball.alpha, 0.7);
+      });
+
+      if (stepIndex === steps.length - 1) {
+        balls.forEach((ball) => {
+          if (ball.state === "cloud") {
+            ball.state = "falling";
+            ball.vx = random(-0.45, 0.45);
+            ball.vy = random(0.8, 1.7);
+          }
+        });
+        settleTick = 0;
+      }
+    }
+
+    function resetExperience() {
+      stepIndex = 0;
+      balls = [];
+      createCloud();
+      updateContent();
+    }
+
+    function advance() {
+      if (stepIndex === steps.length - 1) {
+        resetExperience();
+        return;
+      }
+      stepIndex += 1;
+      updateContent();
+      dropToKeepRatio(steps[stepIndex].keep);
+    }
+
+    function drawBackground() {
+      ctx.clearRect(0, 0, width, height);
+
+      const gradient = ctx.createLinearGradient(0, 0, 0, height);
+      gradient.addColorStop(0, "rgba(255, 247, 235, 0.34)");
+      gradient.addColorStop(0.42, "rgba(232, 249, 255, 0.28)");
+      gradient.addColorStop(0.74, "rgba(253, 232, 242, 0.22)");
+      gradient.addColorStop(1, "rgba(249, 224, 188, 0.26)");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+
+      const glow = ctx.createRadialGradient(width / 2, height * 0.34, 10, width / 2, height * 0.34, width * 0.74);
+      glow.addColorStop(0, "rgba(255, 255, 255, 0.56)");
+      glow.addColorStop(0.38, "rgba(255, 243, 221, 0.24)");
+      glow.addColorStop(0.62, "rgba(219, 245, 255, 0.16)");
+      glow.addColorStop(1, "rgba(255, 255, 255, 0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, width, height);
+
+      const sideGlow = ctx.createRadialGradient(width * 0.8, height * 0.22, 5, width * 0.8, height * 0.22, width * 0.5);
+      sideGlow.addColorStop(0, "rgba(183, 220, 232, 0.2)");
+      sideGlow.addColorStop(1, "rgba(183, 220, 232, 0)");
+      ctx.fillStyle = sideGlow;
+      ctx.fillRect(0, 0, width, height);
+
+      const lower = ctx.createRadialGradient(width * 0.5, height * 0.86, 5, width * 0.5, height * 0.86, width * 0.75);
+      lower.addColorStop(0, "rgba(255, 251, 242, 0.34)");
+      lower.addColorStop(1, "rgba(255, 251, 242, 0)");
+      ctx.fillStyle = lower;
+      ctx.fillRect(0, 0, width, height);
+    }
+
+    function updateGold(ball) {
+      const final = stepIndex === steps.length - 1;
+      const side = ball.goldIndex === 0 ? -1 : 1;
+      const spacing = final ? 24 : width * 0.18;
+      const targetX = width / 2 + side * spacing;
+      const targetY = final ? height * 0.37 : ball.baseY;
+
+      ball.x += (targetX - ball.x) * (final ? 0.035 : 0.008);
+      ball.y += (targetY - ball.y) * (final ? 0.035 : 0.008);
+      ball.alpha += ((final ? 1 : Math.min(0.95, 0.34 + stepIndex * 0.12)) - ball.alpha) * 0.04;
+      ball.r += ((final ? 15 : 9 + stepIndex * 0.9) - ball.r) * 0.04;
+    }
+
+    function updateBall(ball, time) {
+      if (ball.state === "cloud") {
+        const driftX = Math.sin(time * 0.001 + ball.phase) * 0.36;
+        const driftY = Math.cos(time * 0.0012 + ball.phase) * 0.26;
+        ball.x += (ball.baseX + driftX - ball.x) * 0.025 + ball.vx;
+        ball.y += (ball.baseY + driftY - ball.y) * 0.025 + ball.vy;
+        ball.vx *= 0.985;
+        ball.vy *= 0.985;
+      }
+
+      if (ball.state === "falling") {
+        ball.vy += 0.035;
+        ball.x += ball.vx;
+        ball.y += ball.vy + ball.fallSpeed * 0.12;
+        ball.alpha *= 0.992;
+        if (ball.y > height + 30 || ball.alpha < 0.05) {
+          ball.state = "gone";
+        }
+      }
+
+      if (ball.state === "gold") {
+        updateGold(ball);
+      }
+    }
+
+    function drawBall(ball) {
+      if (ball.state === "gone") return;
+
+      ctx.save();
+      ctx.globalAlpha = ball.alpha;
+      if (ball.state === "gold") {
+        ctx.shadowBlur = stepIndex === steps.length - 1 ? 34 : 18;
+        ctx.shadowColor = "rgba(218, 170, 58, 0.86)";
+      } else {
+        ctx.shadowBlur = 16;
+        ctx.shadowColor = "rgba(112, 142, 150, 0.2)";
+      }
+
+      const radial = ctx.createRadialGradient(ball.x - ball.r * 0.35, ball.y - ball.r * 0.35, 1, ball.x, ball.y, ball.r * 1.6);
+      if (ball.state === "gold") {
+        radial.addColorStop(0, "#fff4bd");
+        radial.addColorStop(0.62, ball.color);
+        radial.addColorStop(1, "#9e7124");
+      } else {
+        radial.addColorStop(0, "#ffffff");
+        radial.addColorStop(0.52, ball.color);
+        radial.addColorStop(1, "rgba(116, 146, 154, 0.42)");
+      }
+      ctx.fillStyle = radial;
+      ctx.beginPath();
+      ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawGoldConnection() {
+      if (stepIndex !== steps.length - 1) return;
+      const goldBalls = balls.filter((ball) => ball.state === "gold");
+      if (goldBalls.length < 2) return;
+      const [a, b] = goldBalls;
+      const alpha = Math.min(1, settleTick / 90);
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = "rgba(210, 158, 48, 0.85)";
+      ctx.lineWidth = 2;
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = "rgba(210, 158, 48, 0.82)";
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = "rgba(72, 59, 38, 0.82)";
+      ctx.font = `${Math.max(16, Math.min(22, width * 0.038))}px Microsoft YaHei, Arial`;
+      ctx.textAlign = "center";
+      ctx.fillText("在所有可能性中，我们相遇了", width / 2, height * 0.64);
+      ctx.restore();
+    }
+
+    function animate(time) {
+      drawBackground();
+      balls.forEach((ball) => updateBall(ball, time));
+      balls.forEach(drawBall);
+      drawGoldConnection();
+      if (stepIndex === steps.length - 1) settleTick += 1;
+      requestAnimationFrame(animate);
+    }
+
+    button.addEventListener("click", advance);
+    canvas.addEventListener("click", advance);
+    window.addEventListener("resize", resizeCanvas);
+
+    updateContent();
+    resizeCanvas();
+    requestAnimationFrame(animate);
+  </script>
+</body>
+</html>
