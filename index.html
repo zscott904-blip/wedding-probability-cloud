@@ -56,34 +56,6 @@
       touch-action: manipulation;
     }
 
-    .stat-pill {
-      position: absolute;
-      top: max(18px, env(safe-area-inset-top));
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      min-height: 34px;
-      padding: 8px 12px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 999px;
-      background: rgba(248, 249, 255, 0.18);
-      color: rgba(59, 62, 96, 0.72);
-      font-size: 13px;
-      white-space: nowrap;
-      backdrop-filter: blur(18px);
-      box-shadow: 0 12px 38px rgba(76, 62, 43, 0.04);
-    }
-
-    .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #d7a642;
-      box-shadow: 0 0 14px rgba(219, 175, 82, 0.9);
-    }
-
     .panel {
       position: absolute;
       left: 14px;
@@ -194,7 +166,6 @@
   <main class="app">
     <section class="cloud-stage" aria-label="概率云互动动画">
       <canvas id="probabilityCloud"></canvas>
-      <div class="stat-pill"><span class="dot"></span><span id="remainingText">样本空间：很多很多种可能</span></div>
     </section>
 
     <section class="panel">
@@ -350,7 +321,7 @@
       stepLabel.textContent = `Step ${stepIndex + 1} / ${steps.length}`;
       stepTitle.textContent = step.title;
       stepCopy.textContent = step.copy;
-      remainingText.textContent = step.label;
+      if (remainingText) remainingText.textContent = step.label;
       button.textContent = currentMode() === "future"
         ? "重新看一次"
         : currentMode() === "meet"
