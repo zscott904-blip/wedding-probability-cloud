@@ -256,7 +256,7 @@
 
     function cloudZoom() {
       const visibleStep = Math.min(stepIndex, 5);
-      return 1 + visibleStep * 0.12;
+      return 1 + visibleStep * 0.17;
     }
 
     function cloudCenterY() {
@@ -550,7 +550,7 @@
 
     function drawBall(ball) {
       if (ball.state === "gone") return;
-      const radius = ball.state === "cloud" ? ball.r * (1 + (cloudZoom() - 1) * 0.42) : ball.r;
+      const radius = ball.state === "cloud" ? ball.r * (1 + (cloudZoom() - 1) * 0.55) : ball.r;
 
       ctx.save();
       ctx.globalAlpha = ball.alpha;
