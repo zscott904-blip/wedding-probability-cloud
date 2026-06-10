@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>P(我们相遇)</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif;
+      color: #252337;
+      background: #e9eefb;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+      margin: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      overflow-x: hidden;
+      background:
+        radial-gradient(circle at 16% 12%, rgba(190, 205, 255, 0.52), transparent 30%),
+        radial-gradient(circle at 84% 16%, rgba(210, 180, 245, 0.42), transparent 33%),
+        radial-gradient(circle at 50% 78%, rgba(255, 236, 250, 0.34), transparent 36%),
+        linear-gradient(155deg, #f7f9ff 0%, #e9f0ff 34%, #eee8fb 68%, #f9f4ff 100%);
+    }
+
+    .app {
+      position: relative;
+      width: 100%;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .cloud-stage {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse at 50% 34%, rgba(255, 255, 255, 0.56), transparent 54%),
+        radial-gradient(circle at 48% 42%, rgba(224, 233, 255, 0.38), transparent 48%),
+        radial-gradient(circle at 62% 28%, rgba(239, 221, 255, 0.34), transparent 42%);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100vh;
+      touch-action: manipulation;
+    }
+
+    .panel {
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      bottom: max(14px, env(safe-area-inset-bottom));
+      padding: 8px 4px 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      backdrop-filter: none;
+      text-align: center;
+      text-shadow: 0 1px 20px rgba(255, 255, 255, 0.82);
+    }
+
+    .step-label {
+      margin: 0 0 8px;
+      color: rgba(94, 76, 132, 0.58);
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .step-title {
+      margin: 0;
+      font-size: clamp(21px, 5.6vw, 32px);
+      line-height: 1.22;
+      letter-spacing: 0;
+      color: rgba(37, 35, 58, 0.84);
+    }
+
+    .step-copy {
+      min-height: 72px;
+      max-width: 620px;
+      margin: 12px auto 18px;
+      color: rgba(49, 47, 76, 0.72);
+      font-size: 16px;
+      line-height: 1.75;
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 13px;
+      max-width: 620px;
+      margin: 0 auto;
+    }
+
+    .progress {
+      display: flex;
+      gap: 7px;
+      justify-content: center;
+    }
+
+    .progress i {
+      width: 23px;
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(44, 45, 77, 0.1);
+    }
+
+    .progress i.active {
+      background: rgba(128, 105, 198, 0.56);
+    }
+
+    button {
+      min-height: 44px;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      border-radius: 999px;
+      padding: 0 20px;
+      background: rgba(42, 42, 74, 0.24);
+      color: rgba(255, 248, 238, 0.94);
+      font: inherit;
+      font-size: 16px;
+      cursor: pointer;
+      box-shadow: 0 12px 38px rgba(38, 35, 31, 0.06);
+      backdrop-filter: blur(16px);
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    @media (max-width: 420px) {
+      button {
+        width: auto;
+        max-width: 100%;
+      }
+    }
+
+    @media (min-width: 760px) {
+      .panel {
+        left: 50%;
+        right: auto;
+        width: min(720px, calc(100% - 56px));
+        transform: translateX(-50%);
+        padding: 10px 0 0;
+      }
+
+      .step-copy {
+        font-size: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="cloud-stage" aria-label="概率云互动动画">
+      <canvas id="probabilityCloud"></canvas>
+    </section>
+
+    <section class="panel">
+      <p class="step-label" id="stepLabel">Step 1 / 5</p>
+      <h1 class="step-title" id="stepTitle">还没有相遇之前</h1>
+      <p class="step-copy" id="stepCopy">我们各自拥有很多种人生路径：不同的城市、不同的时间、不同的选择，像云里漂浮的样本点。</p>
+      <div class="controls">
+        <div class="progress" id="progress" aria-hidden="true"></div>
+        <button id="nextButton" type="button">继续缩小样本空间</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.getElementById("probabilityCloud");
+    const ctx = canvas.getContext("2d");
+    const button = document.getElementById("nextButton");
+    const stepLabel = document.getElementById("stepLabel");
+    const stepTitle = document.getElementById("stepTitle");
+    const stepCopy = document.getElementById("stepCopy");
+    const progress = document.getElementById("progress");
+    const remainingText = document.getElementById("remainingText");
+
+    const steps = [
+      {
+        title: "样本空间",
+        copy: "相遇之前，我们都只是无数可能中的一个样本点。",
+        keep: 1,
+        label: "样本空间：很多很多种可能"
+      },
+      {
+        title: "条件出现",
+        copy: "学科、时间和地点，开始给随机的人生加入条件。",
+        keep: 0.55,
+        label: "条件概率：样本空间开始缩小"
+      },
+      {
+        title: "路径收缩",
+        copy: "条件一层一层叠加，两条原本独立的轨迹开始靠近。",
+        keep: 0.22,
+        label: "收敛：独立轨迹开始靠近"
+      },
+      {
+        title: "显著相遇",
+        copy: "直到一个小概率事件发生，并且显著到无法忽略。",
+        keep: 0.02,
+        label: "结果：一个显著的小概率事件",
+        mode: "meet"
+      },
+      {
+        title: "共同未来",
+        copy: "从此，未来不再是两条独立路径，而是我们一起探索的概率云。",
+        keep: 0,
+        label: "新的样本空间：共同探索",
+        mode: "future"
+      }
+    ];
+
+    const palette = ["#ffffff", "#f9fbff", "#dfe9ff", "#d7defa", "#eee3ff", "#f7e9ff", "#e7f5ff"];
+    const gold = ["#f7d984", "#f7d984"];
+    let width = 0;
+    let height = 0;
+    let dpr = 1;
+    let balls = [];
+    let futureBalls = [];
+    let meetEchoBalls = [];
+    let stepIndex = 0;
+    let settleTick = 0;
+
+    function random(min, max) {
+      return min + Math.random() * (max - min);
+    }
+
+    function currentMode() {
+      return steps[stepIndex].mode || "filter";
+    }
+
+    function cloudZoom() {
+      const visibleStep = Math.min(stepIndex, 3);
+      return 1 + visibleStep * 0.25;
+    }
+
+    function cloudCenterY() {
+      return height * 0.37;
+    }
+
+    function cloudCenterPull() {
+      const visibleStep = Math.min(stepIndex, 3);
+      return visibleStep * 0.1;
+    }
+
+    function makeProgress() {
+      progress.innerHTML = "";
+      steps.forEach((_, index) => {
+        const item = document.createElement("i");
+        if (index <= stepIndex) item.classList.add("active");
+        progress.appendChild(item);
+      });
+    }
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      width = rect.width;
+      height = rect.height;
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (!balls.length) createCloud();
+      repositionCloud();
+    }
+
+    function createCloud() {
+      const count = width < 540 ? 140 : 260;
+      balls = [];
+      for (let i = 0; i < count; i += 1) {
+        const angle = random(0, Math.PI * 2);
+        const radius = Math.sqrt(Math.random());
+        const cloudX = Math.cos(angle) * radius * width * random(0.2, 0.46);
+        const cloudY = Math.sin(angle) * radius * height * random(0.1, 0.22);
+        const isGold = i < 2;
+        balls.push({
+          baseX: width / 2 + cloudX,
+          baseY: height * 0.37 + cloudY,
+          x: width / 2 + cloudX,
+          y: height * 0.37 + cloudY,
+          vx: random(-0.8, 0.8),
+          vy: random(-0.6, 0.6),
+          r: isGold ? random(7, 9) : random(3.6, 8.8),
+          color: isGold ? gold[i] : palette[Math.floor(random(0, palette.length))],
+          alpha: isGold ? 0.34 : random(0.5, 0.96),
+          phase: random(0, Math.PI * 2),
+          driftAmpX: random(2.0, 3.2),
+          driftAmpY: random(1.5, 2.6),
+          driftSpeedX: random(0.0009, 0.0015),
+          driftSpeedY: random(0.0009, 0.0016),
+          state: isGold ? "gold" : "cloud",
+          goldIndex: i,
+          fallSpeed: random(1.9, 4.8),
+          targetX: 0,
+          targetY: 0
+        });
+      }
+    }
+
+    function repositionCloud() {
+      balls.forEach((ball) => {
+        if (ball.state === "gone") return;
+        ball.baseX = Math.max(30, Math.min(width - 30, ball.baseX));
+        ball.baseY = Math.max(40, Math.min(height * 0.67, ball.baseY));
+      });
+    }
+
+    function updateContent() {
+      const step = steps[stepIndex];
+      stepLabel.textContent = `Step ${stepIndex + 1} / ${steps.length}`;
+      stepTitle.textContent = step.title;
+      stepCopy.textContent = step.copy;
+      if (remainingText) remainingText.textContent = step.label;
+      button.textContent = currentMode() === "future"
+        ? "重新看一次"
+        : currentMode() === "meet"
+          ? "进入共同的未来"
+          : "继续缩小样本空间";
+      makeProgress();
+    }
+
+    function dropToKeepRatio(keepRatio) {
+      const ordinary = balls.filter((ball) => ball.state === "cloud");
+      const totalOrdinary = balls.filter((ball) => ball.state !== "gold").length;
+      const shouldRemain = Math.max(0, Math.floor(totalOrdinary * keepRatio));
+      const currentRemain = ordinary.length;
+      const dropCount = Math.max(0, currentRemain - shouldRemain);
+      const shuffled = ordinary.sort(() => Math.random() - 0.5);
+
+      shuffled.slice(0, dropCount).forEach((ball) => {
+        ball.state = "falling";
+        ball.vx = random(-0.55, 0.55);
+        ball.vy = random(0.6, 1.8);
+        ball.alpha = Math.max(ball.alpha, 0.7);
+      });
+
+      if (currentMode() === "meet") {
+        balls.forEach((ball) => {
+          if (ball.state === "cloud") {
+            ball.state = "falling";
+            ball.vx = random(-0.45, 0.45);
+            ball.vy = random(0.8, 1.7);
+          }
+        });
+        settleTick = 0;
+      }
+    }
+
+    function refreshRemainingCloudMotion() {
+      balls.forEach((ball) => {
+        if (ball.state !== "cloud") return;
+        ball.phase = random(0, Math.PI * 2);
+        ball.vx = random(-0.32, 0.32);
+        ball.vy = random(-0.22, 0.22);
+        ball.driftAmpX = random(2.0, 3.2);
+        ball.driftAmpY = random(1.5, 2.6);
+        ball.driftSpeedX = random(0.0009, 0.0015);
+        ball.driftSpeedY = random(0.0009, 0.0016);
+      });
+    }
+
+    function resetExperience() {
+      stepIndex = 0;
+      balls = [];
+      futureBalls = [];
+      meetEchoBalls = [];
+      createCloud();
+      updateContent();
+    }
+
+    function createFutureBall(z = random(0.02, 1)) {
+      const angle = random(0, Math.PI * 2);
+      const radius = random(0.28, 1);
+      return {
+        angle,
+        orbit: radius,
+        spreadX: random(0.18, 0.66),
+        spreadY: random(0.1, 0.46),
+        z,
+        speed: random(0.0028, 0.008),
+        r: random(3.2, 8.8),
+        color: palette[Math.floor(random(0, palette.length))],
+        phase: random(0, Math.PI * 2),
+        alpha: random(0.36, 0.88)
+      };
+    }
+
+    function createMeetEchoBall() {
+      const angle = random(0, Math.PI * 2);
+      const radius = Math.sqrt(Math.random());
+      const cloudX = Math.cos(angle) * radius * width * random(0.2, 0.52);
+      const cloudY = Math.sin(angle) * radius * height * random(0.1, 0.26);
+      return {
+        baseX: width / 2 + cloudX,
+        baseY: cloudCenterY() + cloudY,
+        r: random(2.8, 7.4),
+        color: palette[Math.floor(random(0, palette.length))],
+        alpha: random(0.24, 0.62),
+        phase: random(0, Math.PI * 2)
+      };
+    }
+
+    function enterMeetScene() {
+      meetEchoBalls = [];
+      const count = width < 540 ? 170 : 280;
+      for (let i = 0; i < count; i += 1) {
+        meetEchoBalls.push(createMeetEchoBall());
+      }
+    }
+
+    function enterFutureCloud() {
+      futureBalls = [];
+      meetEchoBalls = [];
+      const count = width < 540 ? 180 : 300;
+      for (let i = 0; i < count; i += 1) {
+        futureBalls.push(createFutureBall(random(0.02, 0.18) + (i / count) * 0.08));
+      }
+      settleTick = 0;
+    }
+
+    function advance() {
+      if (currentMode() === "future") {
+        resetExperience();
+        return;
+      }
+      stepIndex += 1;
+      updateContent();
+      dropToKeepRatio(steps[stepIndex].keep);
+      refreshRemainingCloudMotion();
+      if (currentMode() === "meet") {
+        enterMeetScene();
+      }
+      if (currentMode() === "future") {
+        enterFutureCloud();
+      }
+    }
+
+    function drawBackground() {
+      ctx.clearRect(0, 0, width, height);
+
+      const gradient = ctx.createLinearGradient(0, 0, 0, height);
+      gradient.addColorStop(0, "rgba(250, 252, 255, 0.46)");
+      gradient.addColorStop(0.38, "rgba(224, 235, 255, 0.34)");
+      gradient.addColorStop(0.72, "rgba(240, 229, 255, 0.28)");
+      gradient.addColorStop(1, "rgba(248, 242, 255, 0.34)");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+
+      const glow = ctx.createRadialGradient(width / 2, height * 0.34, 10, width / 2, height * 0.34, width * 0.74);
+      glow.addColorStop(0, "rgba(255, 255, 255, 0.62)");
+      glow.addColorStop(0.38, "rgba(224, 234, 255, 0.28)");
+      glow.addColorStop(0.62, "rgba(238, 222, 255, 0.2)");
+      glow.addColorStop(1, "rgba(255, 255, 255, 0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, width, height);
+
+      const sideGlow = ctx.createRadialGradient(width * 0.8, height * 0.22, 5, width * 0.8, height * 0.22, width * 0.5);
+      sideGlow.addColorStop(0, "rgba(194, 176, 244, 0.26)");
+      sideGlow.addColorStop(1, "rgba(194, 176, 244, 0)");
+      ctx.fillStyle = sideGlow;
+      ctx.fillRect(0, 0, width, height);
+
+      const lower = ctx.createRadialGradient(width * 0.5, height * 0.86, 5, width * 0.5, height * 0.86, width * 0.75);
+      lower.addColorStop(0, "rgba(255, 248, 255, 0.34)");
+      lower.addColorStop(1, "rgba(255, 248, 255, 0)");
+      ctx.fillStyle = lower;
+      ctx.fillRect(0, 0, width, height);
+    }
+
+    function updateGold(ball) {
+      const mode = currentMode();
+      const meet = mode === "meet";
+      const future = mode === "future";
+      const side = ball.goldIndex === 0 ? -1 : 1;
+      const spacing = future ? 11 : meet ? 24 : width * 0.18;
+      const floatX = future ? Math.sin(settleTick * 0.026 + ball.phase + ball.goldIndex) * 12 : 0;
+      const floatY = future ? Math.cos(settleTick * 0.021 + ball.phase * 0.7) * 8 : 0;
+      const targetX = width / 2 + side * spacing + floatX;
+      const targetY = (future ? height * 0.33 : meet ? height * 0.37 : ball.baseY) + floatY;
+      const speed = future ? 0.052 : meet ? 0.035 : 0.008;
+      const targetAlpha = future ? 0.9 : meet ? 1 : Math.min(0.95, 0.34 + stepIndex * 0.12);
+      const futurePulse = future ? Math.sin(settleTick * 0.045 + ball.phase + ball.goldIndex * 1.7) * 2.4 : 0;
+      const targetRadius = future ? 17 + futurePulse : meet ? 17 : 9 + stepIndex * 1.05;
+
+      ball.x += (targetX - ball.x) * speed;
+      ball.y += (targetY - ball.y) * speed;
+      ball.alpha += (targetAlpha - ball.alpha) * 0.04;
+      ball.r += (targetRadius - ball.r) * 0.04;
+    }
+
+    function updateBall(ball, time) {
+      if (ball.state === "cloud") {
+        const zoom = cloudZoom();
+        const pull = cloudCenterPull();
+        const zoomedBaseX = width / 2 + (ball.baseX - width / 2) * zoom * (1 - pull);
+        const zoomedBaseY = cloudCenterY() + (ball.baseY - cloudCenterY()) * zoom * (1 - pull);
+        const driftX = Math.sin(time * ball.driftSpeedX + ball.phase) * ball.driftAmpX;
+        const driftY = Math.cos(time * ball.driftSpeedY + ball.phase) * ball.driftAmpY;
+        ball.x += (zoomedBaseX + driftX - ball.x) * 0.018 + ball.vx;
+        ball.y += (zoomedBaseY + driftY - ball.y) * 0.018 + ball.vy;
+        ball.vx *= 1;
+        ball.vy *= 1;
+      }
+
+      if (ball.state === "falling") {
+        ball.vy += 0.035;
+        ball.x += ball.vx;
+        ball.y += ball.vy + ball.fallSpeed * 0.12;
+        ball.alpha *= 0.992;
+        if (ball.y > height + 30 || ball.alpha < 0.05) {
+          ball.state = "gone";
+        }
+      }
+
+      if (ball.state === "gold") {
+        updateGold(ball);
+      }
+    }
+
+    function updateFutureBall(ball, time) {
+      const ramp = Math.min(1, settleTick / 120);
+      ball.z += ball.speed * (0.22 + ramp * 0.78);
+      const point = futurePosition(ball, time);
+      const outsideEdge = point.x < -point.r || point.x > width + point.r || point.y < -point.r || point.y > height + point.r;
+      if ((ball.z > 0.88 && outsideEdge) || ball.z > 1.42) {
+        Object.assign(ball, createFutureBall(0.02));
+      }
+      ball.angle += Math.sin(time * 0.0004 + ball.phase) * 0.0008;
+    }
+
+    function futurePosition(ball, time = performance.now()) {
+      const depth = Math.max(0.02, ball.z);
+      const edgePush = Math.pow(depth, 2.35);
+      const perspective = 0.12 + edgePush * 6.15;
+      const wobble = Math.sin(time * 0.0007 + ball.phase) * 0.035;
+      const x = width / 2 + Math.cos(ball.angle + wobble) * ball.orbit * width * ball.spreadX * perspective;
+      const y = height * 0.4 + Math.sin(ball.angle - wobble) * ball.orbit * height * ball.spreadY * perspective;
+      const r = ball.r * (0.26 + edgePush * 4.8);
+      const alpha = Math.min(0.96, ball.alpha * (0.18 + depth * 1.05));
+      return { x, y, r, alpha, depth };
+    }
+
+    function drawFutureBall(ball) {
+      const point = futurePosition(ball);
+      ctx.save();
+      ctx.globalAlpha = point.alpha;
+      ctx.shadowBlur = 16 + point.depth * 26;
+      ctx.shadowColor = "rgba(142, 151, 218, 0.34)";
+      const radial = ctx.createRadialGradient(point.x - point.r * 0.36, point.y - point.r * 0.36, 1, point.x, point.y, point.r * 1.8);
+      radial.addColorStop(0, "#ffffff");
+      radial.addColorStop(0.48, ball.color);
+      radial.addColorStop(1, "rgba(111, 122, 176, 0.28)");
+      ctx.fillStyle = radial;
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, point.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawMeetEchoCloud(time) {
+      if (currentMode() !== "meet" || !meetEchoBalls.length) return;
+      const reveal = Math.max(0, Math.min(1, (settleTick - 80) / 140));
+      if (reveal <= 0) return;
+      const scale = 0.18 + reveal * 1.04;
+
+      meetEchoBalls.forEach((ball) => {
+        const driftX = Math.sin(time * 0.0008 + ball.phase) * 1.8;
+        const driftY = Math.cos(time * 0.0007 + ball.phase) * 1.3;
+        const x = width / 2 + (ball.baseX - width / 2) * scale + driftX;
+        const y = cloudCenterY() + (ball.baseY - cloudCenterY()) * scale + driftY;
+        const r = ball.r * (0.28 + reveal * 0.52);
+
+        ctx.save();
+        ctx.globalAlpha = ball.alpha * reveal * 0.62;
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = "rgba(142, 151, 218, 0.2)";
+        const radial = ctx.createRadialGradient(x - r * 0.35, y - r * 0.35, 1, x, y, r * 1.7);
+        radial.addColorStop(0, "#ffffff");
+        radial.addColorStop(0.55, ball.color);
+        radial.addColorStop(1, "rgba(111, 122, 176, 0.22)");
+        ctx.fillStyle = radial;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+    }
+
+    function drawBall(ball) {
+      if (ball.state === "gone") return;
+      const radius = ball.state === "cloud" ? ball.r * (1 + (cloudZoom() - 1) * 0.55) : ball.r;
+
+      ctx.save();
+      ctx.globalAlpha = ball.alpha;
+      if (ball.state === "gold") {
+        ctx.shadowBlur = currentMode() === "meet" || currentMode() === "future" ? 34 : 18;
+        ctx.shadowColor = "rgba(246, 207, 115, 0.92)";
+      } else {
+        ctx.shadowBlur = 16;
+        ctx.shadowColor = "rgba(112, 126, 184, 0.24)";
+      }
+
+      const radial = ctx.createRadialGradient(ball.x - radius * 0.35, ball.y - radius * 0.35, 1, ball.x, ball.y, radius * 1.6);
+      if (ball.state === "gold") {
+        radial.addColorStop(0, "#fff8d7");
+        radial.addColorStop(0.62, ball.color);
+        radial.addColorStop(1, "#c89d43");
+      } else {
+        radial.addColorStop(0, "#ffffff");
+        radial.addColorStop(0.52, ball.color);
+        radial.addColorStop(1, "rgba(111, 122, 176, 0.42)");
+      }
+      ctx.fillStyle = radial;
+      ctx.beginPath();
+      ctx.arc(ball.x, ball.y, radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawGoldConnection() {
+      if (currentMode() !== "meet") return;
+      const goldBalls = balls.filter((ball) => ball.state === "gold");
+      if (goldBalls.length < 2) return;
+      const [a, b] = goldBalls;
+      const alpha = Math.min(1, settleTick / 90);
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = "rgba(239, 198, 99, 0.86)";
+      ctx.lineWidth = 2;
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = "rgba(239, 198, 99, 0.82)";
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = "rgba(54, 47, 74, 0.82)";
+      ctx.font = `${Math.max(16, Math.min(22, width * 0.038))}px Microsoft YaHei, Arial`;
+      ctx.textAlign = "center";
+      ctx.fillText("在所有可能性中，我们相遇了", width / 2, height * 0.64);
+      ctx.restore();
+    }
+
+    function animate(time) {
+      drawBackground();
+      drawMeetEchoCloud(time);
+      if (currentMode() === "future") {
+        futureBalls.forEach((ball) => updateFutureBall(ball, time));
+        futureBalls
+          .slice()
+          .sort((a, b) => a.z - b.z)
+          .forEach(drawFutureBall);
+      }
+      balls.forEach((ball) => updateBall(ball, time));
+      balls.forEach(drawBall);
+      drawGoldConnection();
+      if (currentMode() === "meet" || currentMode() === "future") settleTick += 1;
+      requestAnimationFrame(animate);
+    }
+
+    button.addEventListener("click", advance);
+    canvas.addEventListener("click", advance);
+    window.addEventListener("resize", resizeCanvas);
+
+    updateContent();
+    resizeCanvas();
+    requestAnimationFrame(animate);
+  </script>
+</body>
+</html>
