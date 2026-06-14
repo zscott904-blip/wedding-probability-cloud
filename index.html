@@ -26,10 +26,10 @@
       min-height: 100vh;
       overflow-x: hidden;
       background:
-        radial-gradient(circle at 16% 12%, rgba(190, 205, 255, 0.52), transparent 30%),
-        radial-gradient(circle at 84% 16%, rgba(210, 180, 245, 0.42), transparent 33%),
+        radial-gradient(circle at 16% 12%, rgba(136, 158, 224, 0.58), transparent 31%),
+        radial-gradient(circle at 84% 16%, rgba(168, 139, 219, 0.5), transparent 34%),
         radial-gradient(circle at 50% 78%, rgba(255, 236, 250, 0.34), transparent 36%),
-        linear-gradient(155deg, #f7f9ff 0%, #e9f0ff 34%, #eee8fb 68%, #f9f4ff 100%);
+        linear-gradient(155deg, #dfe7fb 0%, #d8e2f7 34%, #eee8fb 68%, #faf5ff 100%);
     }
 
     .app {
@@ -39,14 +39,83 @@
       overflow: hidden;
     }
 
+    .start-screen {
+      position: absolute;
+      inset: 0;
+      z-index: 4;
+      display: grid;
+      place-items: center;
+      padding: 28px;
+      text-align: center;
+      background:
+        radial-gradient(circle at 50% 32%, rgba(236, 229, 255, 0.5), transparent 34%),
+        linear-gradient(155deg, #dfe7fb 0%, #e8e6fb 46%, #faf5ff 100%);
+      transition: opacity 700ms ease, visibility 700ms ease;
+    }
+
+    .start-screen.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .start-content {
+      width: min(100%, 560px);
+    }
+
+    .start-date {
+      margin: 0 0 18px;
+      color: rgba(67, 62, 112, 0.72);
+      font-size: 15px;
+      letter-spacing: 0.18em;
+    }
+
+    .start-copy {
+      margin: 0 auto 28px;
+      color: rgba(37, 35, 58, 0.82);
+      font-size: clamp(22px, 6vw, 34px);
+      line-height: 1.45;
+      letter-spacing: 0;
+    }
+
+    .start-button {
+      min-height: 48px;
+      border: 1px solid rgba(255, 255, 255, 0.34);
+      border-radius: 999px;
+      padding: 0 22px;
+      background: rgba(42, 42, 74, 0.28);
+      color: rgba(255, 248, 238, 0.96);
+      font: inherit;
+      font-size: 16px;
+      cursor: pointer;
+      box-shadow: 0 12px 38px rgba(38, 35, 31, 0.08);
+      backdrop-filter: blur(16px);
+    }
+
+    .start-button:disabled {
+      cursor: default;
+      opacity: 0.72;
+    }
+
+    .story-shell {
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 700ms ease, visibility 700ms ease;
+    }
+
+    .story-shell.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
     .cloud-stage {
       position: absolute;
       inset: 0;
       overflow: hidden;
       background:
-        radial-gradient(ellipse at 50% 34%, rgba(255, 255, 255, 0.56), transparent 54%),
-        radial-gradient(circle at 48% 42%, rgba(224, 233, 255, 0.38), transparent 48%),
-        radial-gradient(circle at 62% 28%, rgba(239, 221, 255, 0.34), transparent 42%);
+        radial-gradient(ellipse at 50% 34%, rgba(230, 236, 255, 0.34), transparent 54%),
+        radial-gradient(circle at 48% 42%, rgba(189, 205, 246, 0.3), transparent 48%),
+        radial-gradient(circle at 62% 28%, rgba(213, 193, 244, 0.3), transparent 42%);
     }
 
     canvas {
@@ -56,11 +125,73 @@
       touch-action: manipulation;
     }
 
+    .memory-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .memory-shard {
+      position: absolute;
+      width: clamp(116px, 34vw, 220px);
+      aspect-ratio: 4 / 5;
+      border-radius: 6px;
+      background-image: var(--memory-image);
+      background-size: cover;
+      background-position: center;
+      opacity: 0;
+      filter: blur(0.8px) saturate(0.65) brightness(1.15) contrast(0.9);
+      mix-blend-mode: screen;
+      box-shadow: 0 0 46px rgba(230, 236, 255, 0.18);
+      transform: translate3d(0, 18px, 0) rotate(var(--memory-rotate, -4deg)) scale(0.94);
+      animation: memoryFloat 7.5s ease-in-out infinite;
+      mask-image: radial-gradient(ellipse at center, #000 42%, rgba(0, 0, 0, 0.72) 68%, transparent 100%);
+      -webkit-mask-image: radial-gradient(ellipse at center, #000 42%, rgba(0, 0, 0, 0.72) 68%, transparent 100%);
+    }
+
+    .memory-shard.visible {
+      transform: translate3d(0, 0, 0) rotate(var(--memory-rotate, -4deg)) scale(1);
+    }
+
+    .memory-shard.pos-left {
+      left: 7%;
+      top: 16%;
+    }
+
+    .memory-shard.pos-right {
+      right: 6%;
+      top: 20%;
+    }
+
+    .memory-shard.pos-center {
+      left: 50%;
+      top: 13%;
+      transform: translate3d(-50%, 18px, 0) rotate(var(--memory-rotate, 2deg)) scale(0.94);
+      animation-name: memoryRevealCenter, memoryFloat;
+    }
+
+    .memory-shard.pos-center.visible {
+      transform: translate3d(-50%, 0, 0) rotate(var(--memory-rotate, 2deg)) scale(1);
+    }
+
+    @keyframes memoryFloat {
+      0%,
+      100% {
+        margin-top: 0;
+      }
+      50% {
+        margin-top: -10px;
+      }
+    }
+
     .panel {
       position: absolute;
       left: 14px;
       right: 14px;
       bottom: max(14px, env(safe-area-inset-bottom));
+      z-index: 2;
       padding: 8px 4px 0;
       border: 0;
       border-radius: 0;
@@ -79,18 +210,20 @@
       text-transform: uppercase;
     }
 
+    .step-label.start-date {
+      color: rgba(67, 62, 112, 0.7);
+      font-size: 15px;
+      letter-spacing: 0.18em;
+    }
+
     .step-title {
-      margin: 0;
-      font-size: clamp(21px, 5.6vw, 32px);
-      line-height: 1.22;
-      letter-spacing: 0;
-      color: rgba(37, 35, 58, 0.84);
+      display: none;
     }
 
     .step-copy {
       min-height: 72px;
       max-width: 620px;
-      margin: 12px auto 18px;
+      margin: 0 auto 20px;
       color: rgba(49, 47, 76, 0.72);
       font-size: 16px;
       line-height: 1.75;
@@ -164,74 +297,178 @@
 </head>
 <body>
   <main class="app">
-    <section class="cloud-stage" aria-label="概率云互动动画">
-      <canvas id="probabilityCloud"></canvas>
-    </section>
-
-    <section class="panel">
-      <p class="step-label" id="stepLabel">Step 1 / 6</p>
-      <h1 class="step-title" id="stepTitle">还没有相遇之前</h1>
-      <p class="step-copy" id="stepCopy">我们各自拥有很多种人生路径：不同的城市、不同的时间、不同的选择，像云里漂浮的样本点。</p>
-      <div class="controls">
-        <div class="progress" id="progress" aria-hidden="true"></div>
-        <button id="nextButton" type="button">继续缩小样本空间</button>
+    <section class="start-screen" id="startScreen" aria-label="故事开始">
+      <div class="start-content">
+        <p class="start-date">2026.06.26</p>
+        <p class="start-copy">每一段相遇，<br>都从许多小小的选择开始。</p>
+        <button class="start-button" id="startButton" type="button">开始这段故事</button>
       </div>
     </section>
+
+    <div class="story-shell" id="storyShell">
+      <section class="cloud-stage" aria-label="概率云互动动画">
+        <canvas id="probabilityCloud"></canvas>
+        <div class="memory-layer" id="memoryLayer" aria-hidden="true"></div>
+      </section>
+
+      <section class="panel">
+        <p class="step-label" id="stepLabel">Step 1 / 5</p>
+        <h1 class="step-title" id="stepTitle"></h1>
+        <p class="step-copy" id="stepCopy">相遇之前，我们都只是无数可能中的一个样本点。</p>
+        <div class="controls">
+          <div class="progress" id="progress" aria-hidden="true"></div>
+          <button id="nextButton" type="button">看看选择如何开始</button>
+        </div>
+      </section>
+    </div>
   </main>
 
   <script>
     const canvas = document.getElementById("probabilityCloud");
     const ctx = canvas.getContext("2d");
+    const startScreen = document.getElementById("startScreen");
+    const storyShell = document.getElementById("storyShell");
+    const startButton = document.getElementById("startButton");
     const button = document.getElementById("nextButton");
     const stepLabel = document.getElementById("stepLabel");
     const stepTitle = document.getElementById("stepTitle");
     const stepCopy = document.getElementById("stepCopy");
     const progress = document.getElementById("progress");
     const remainingText = document.getElementById("remainingText");
+    const memoryLayer = document.getElementById("memoryLayer");
+    const photoPath = (step, pos, index = 1) => `photo/step${step}-${pos}-${index}.jpg`;
+    const defaultMemorySettings = {
+      delayStartMs: 3000,
+      delayBetweenMs: 1000,
+      peakOpacity: 0.6,
+      fadeInMs: 1000,
+      holdMs: 5000,
+      fadeOutMs: 2000,
+      enterY: 18,
+      exitY: -12,
+      enterScale: 0.94,
+      exitScale: 1.04
+    };
+
+    const memorySettingsByStep = {
+      1: {
+        delayStartMs: 6000,
+        delayBetweenMs: 1000,
+        peakOpacity: 1,
+        fadeInMs: 1000,
+        holdMs: 5000,
+        fadeOutMs: 2000,
+        enterY: 18,
+        exitY: -12,
+        enterScale: 0.94,
+        exitScale: 1.04
+      },
+      2: {
+        delayStartMs: 3000,
+        delayBetweenMs: 2000,
+        peakOpacity: 0.6,
+        fadeInMs: 1000,
+        holdMs: 5000,
+        fadeOutMs: 2000,
+        enterY: 18,
+        exitY: -12,
+        enterScale: 0.94,
+        exitScale: 1.04
+      },
+      3: {
+        delayStartMs: 4000,
+        delayBetweenMs: 4000,
+        peakOpacity: 1,
+        fadeInMs: 1000,
+        holdMs: 4000,
+        fadeOutMs: 500,
+        enterY: 18,
+        exitY: -12,
+        enterScale: 0.94,
+        exitScale: 1.04
+      },
+      4: {
+        delayStartMs: 3000,
+        delayBetweenMs: 1000,
+        peakOpacity: 0.6,
+        fadeInMs: 1000,
+        holdMs: 5000,
+        fadeOutMs: 2000,
+        enterY: 18,
+        exitY: -12,
+        enterScale: 0.94,
+        exitScale: 1.04
+      },
+      5: {
+        delayStartMs: 3000,
+        delayBetweenMs: 1000,
+        peakOpacity: 0.6,
+        fadeInMs: 1000,
+        holdMs: 5000,
+        fadeOutMs: 2000,
+        enterY: 18,
+        exitY: -12,
+        enterScale: 0.94,
+        exitScale: 1.04
+      }
+    };
 
     const steps = [
       {
-        title: "还没有相遇之前",
-        copy: "我们各自拥有很多种人生路径：不同的城市、不同的时间、不同的选择，像云里漂浮的样本点。",
+        title: "样本空间",
+        copy: "相遇之前，我们都只是无数可能中的一个样本点。",
         keep: 1,
-        label: "样本空间：很多很多种可能"
+        label: "样本空间：很多很多种可能",
+        button: "看看选择如何开始",
+        memories: [
+          { src: photoPath(1, "left"), pos: "left", rotate: "-5deg", opacityScale: 0.95 },
+          { src: photoPath(1, "right"), pos: "right", rotate: "6deg", opacityScale: 0.9 }
+        ]
       },
       {
-        title: "我们都选择了统计",
-        copy: "当世界被看成分布、误差和可能性，有些轨迹开始拥有相似的坐标。",
-        keep: 0.72,
-        label: "条件一：同一门学科"
+        title: "条件出现",
+        copy: "每一个选择，都会让一些可能性远去，也让另一些可能性留下。",
+        keep: 0.55,
+        label: "条件概率：样本空间开始缩小",
+        button: "继续靠近那条路径",
+        memories: [
+          { src: photoPath(2, "left"), pos: "left", rotate: "-7deg", opacityScale: 1.05 },
+          { src: photoPath(2, "center"), pos: "center", rotate: "2deg", opacityScale: 1.08 },
+          { src: photoPath(2, "right"), pos: "right", rotate: "5deg", opacityScale: 0.93 }
+        ]
       },
       {
-        title: "我们出现在同一段时间",
-        copy: "早一点，晚一点，故事都会偏离。时间这个变量，刚好落在了同一个区间。",
-        keep: 0.5,
-        label: "条件二：同一段时间"
+        title: "路径收缩",
+        copy: "一次次了解和回应，让两条独立的轨迹慢慢靠近。",
+        keep: 0.22,
+        label: "收敛：独立轨迹开始靠近",
+        button: "看见那个结果",
+        memories: [
+          { src: photoPath(3, "left", 1), pos: "left", rotate: "4deg", opacityScale: 0.93 },
+          { src: photoPath(3, "center", 1), pos: "center", rotate: "-2deg", opacityScale: 1.13 },
+          { src: photoPath(3, "right", 1), pos: "right", rotate: "8deg", opacityScale: 0.9 },
+          { src: photoPath(3, "left", 2), pos: "left", rotate: "-6deg", opacityScale: 0.86 },
+          { src: photoPath(3, "center", 2), pos: "center", rotate: "3deg", opacityScale: 1.02 },
+          { src: photoPath(3, "right", 2), pos: "right", rotate: "-4deg", opacityScale: 0.84 }
+        ]
       },
       {
-        title: "两条轨迹靠近了",
-        copy: "在某个具体的地点，两个原本独立的随机变量，第一次有了交集。",
-        keep: 0.32,
-        label: "条件三：同一个交点"
-      },
-      {
-        title: "那一次回应没有错过",
-        copy: "有些小概率，不只靠发生，也靠被认真接住。于是一次对话，变成了新的样本路径。",
-        keep: 0.16,
-        label: "条件四：没有错过"
-      },
-      {
-        title: "最终，云里留下了我们",
-        copy: "在众多没有发生的人生里，有两个金色的可能性留了下来，并且慢慢走向彼此。",
+        title: "显著相遇",
+        copy: "小概率不代表不会发生；当它真的发生，就成为无法忽略的确定。",
         keep: 0.02,
-        label: "结果：两个金色样本点",
+        label: "结果：一个显著的小概率事件",
+        button: "走向共同的未来",
+        memories: [
+          { src: photoPath(4, "center"), pos: "center", rotate: "1deg", opacityScale: 1.1, delayMs: 450 }
+        ],
         mode: "meet"
       },
       {
-        title: "一起进入新的概率云",
-        copy: "相遇之后，我们又回到无限可能里。不同的是，从这一刻开始，未来的样本空间由我们一起探索。",
+        title: "共同未来",
+        copy: "从今天开始，未来的无限可能，由我们一起探索。",
         keep: 0,
         label: "新的样本空间：共同探索",
+        button: "再看一次我们的概率云",
         mode: "future"
       }
     ];
@@ -243,8 +480,12 @@
     let dpr = 1;
     let balls = [];
     let futureBalls = [];
+    let meetEchoBalls = [];
     let stepIndex = 0;
     let settleTick = 0;
+    let hasStarted = false;
+    let isStarting = false;
+    let advanceLockedUntil = 0;
 
     function random(min, max) {
       return min + Math.random() * (max - min);
@@ -255,8 +496,8 @@
     }
 
     function cloudZoom() {
-      const visibleStep = Math.min(stepIndex, 5);
-      return 1 + visibleStep * 0.17;
+      const visibleStep = Math.min(stepIndex, 3);
+      return 1 + visibleStep * 0.25;
     }
 
     function cloudCenterY() {
@@ -264,8 +505,8 @@
     }
 
     function cloudCenterPull() {
-      const visibleStep = Math.min(stepIndex, 5);
-      return visibleStep * 0.08;
+      const visibleStep = Math.min(stepIndex, 3);
+      return visibleStep * 0.15;
     }
 
     function makeProgress() {
@@ -274,6 +515,66 @@
         const item = document.createElement("i");
         if (index <= stepIndex) item.classList.add("active");
         progress.appendChild(item);
+      });
+    }
+
+    function getMemorySettings(stepNumber) {
+      return {
+        ...defaultMemorySettings,
+        ...(memorySettingsByStep[stepNumber] || {})
+      };
+    }
+
+    function renderMemories(memories = [], settings = defaultMemorySettings) {
+      memoryLayer.innerHTML = "";
+      memories.forEach((memory, index) => {
+        const shard = document.createElement("div");
+        shard.className = `memory-shard pos-${memory.pos || "center"}`;
+        const isCenter = (memory.pos || "center") === "center";
+        const rotate = memory.rotate || (isCenter ? "2deg" : "0deg");
+        const peakOpacity = memory.opacity ?? settings.peakOpacity * (memory.opacityScale ?? 1);
+        const delay = memory.delayMs ?? settings.delayStartMs + index * settings.delayBetweenMs;
+        const duration = settings.fadeInMs + settings.holdMs + settings.fadeOutMs;
+        const fadeInPoint = settings.fadeInMs / duration;
+        const holdPoint = (settings.fadeInMs + settings.holdMs) / duration;
+        const memoryTransform = (y, scale) => {
+          const translate = isCenter ? `translate3d(-50%, ${y}px, 0)` : `translate3d(0, ${y}px, 0)`;
+          return `${translate} rotate(${rotate}) scale(${scale})`;
+        };
+
+        shard.style.setProperty("--memory-image", `url("${memory.src}")`);
+        shard.style.setProperty("--memory-rotate", rotate);
+        memoryLayer.appendChild(shard);
+        shard.animate(
+          [
+            {
+              opacity: 0,
+              transform: memoryTransform(settings.enterY, settings.enterScale),
+              offset: 0
+            },
+            {
+              opacity: peakOpacity,
+              transform: memoryTransform(0, 1),
+              offset: fadeInPoint
+            },
+            {
+              opacity: peakOpacity,
+              transform: memoryTransform(0, 1),
+              offset: holdPoint
+            },
+            {
+              opacity: 0,
+              transform: memoryTransform(settings.exitY, settings.exitScale),
+              offset: 1
+            }
+          ],
+          {
+            delay,
+            duration,
+            easing: "ease-in-out",
+            fill: "both"
+          }
+        );
       });
     }
 
@@ -290,7 +591,7 @@
     }
 
     function createCloud() {
-      const count = width < 540 ? 140 : 260;
+      const count = width < 540 ? 100 : 200;
       balls = [];
       for (let i = 0; i < count; i += 1) {
         const angle = random(0, Math.PI * 2);
@@ -331,17 +632,51 @@
     }
 
     function updateContent() {
+      if (!hasStarted) {
+        showStartScreen();
+        return;
+      }
       const step = steps[stepIndex];
+      stepLabel.classList.remove("start-date");
       stepLabel.textContent = `Step ${stepIndex + 1} / ${steps.length}`;
       stepTitle.textContent = step.title;
       stepCopy.textContent = step.copy;
       if (remainingText) remainingText.textContent = step.label;
-      button.textContent = currentMode() === "future"
-        ? "重新看一次"
-        : currentMode() === "meet"
-          ? "进入新的概率云"
-          : "继续缩小样本空间";
+      button.textContent = step.button;
+      renderMemories(step.memories, getMemorySettings(stepIndex + 1));
       makeProgress();
+    }
+
+    function showStartScreen() {
+      isStarting = false;
+      startScreen.classList.remove("hidden");
+      storyShell.classList.remove("active");
+      startButton.disabled = false;
+      startButton.textContent = "开始这段故事";
+      stepLabel.classList.remove("start-date");
+      stepLabel.textContent = "Step 1 / 5";
+      stepTitle.textContent = steps[0].title;
+      stepCopy.textContent = steps[0].copy;
+      button.textContent = steps[0].button;
+      progress.innerHTML = "";
+      renderMemories([]);
+    }
+
+    function startStory() {
+      if (isStarting || hasStarted) return;
+      isStarting = true;
+      startButton.disabled = true;
+      startButton.textContent = "故事即将开始";
+      advanceLockedUntil = performance.now() + 1400;
+      hasStarted = true;
+      stepIndex = 0;
+      window.setTimeout(() => {
+        startScreen.classList.add("hidden");
+        storyShell.classList.add("active");
+        updateContent();
+        refreshRemainingCloudMotion();
+        isStarting = false;
+      }, 220);
     }
 
     function dropToKeepRatio(keepRatio) {
@@ -386,8 +721,10 @@
 
     function resetExperience() {
       stepIndex = 0;
+      hasStarted = false;
       balls = [];
       futureBalls = [];
+      meetEchoBalls = [];
       createCloud();
       updateContent();
     }
@@ -409,8 +746,32 @@
       };
     }
 
+    function createMeetEchoBall() {
+      const angle = random(0, Math.PI * 2);
+      const radius = Math.sqrt(Math.random());
+      const cloudX = Math.cos(angle) * radius * width * random(0.2, 0.52);
+      const cloudY = Math.sin(angle) * radius * height * random(0.1, 0.26);
+      return {
+        baseX: width / 2 + cloudX,
+        baseY: cloudCenterY() + cloudY,
+        r: random(2.8, 7.4),
+        color: palette[Math.floor(random(0, palette.length))],
+        alpha: random(0.24, 0.62),
+        phase: random(0, Math.PI * 2)
+      };
+    }
+
+    function enterMeetScene() {
+      meetEchoBalls = [];
+      const count = width < 540 ? 170 : 280;
+      for (let i = 0; i < count; i += 1) {
+        meetEchoBalls.push(createMeetEchoBall());
+      }
+    }
+
     function enterFutureCloud() {
       futureBalls = [];
+      meetEchoBalls = [];
       const count = width < 540 ? 180 : 300;
       for (let i = 0; i < count; i += 1) {
         futureBalls.push(createFutureBall(random(0.02, 0.18) + (i / count) * 0.08));
@@ -419,6 +780,10 @@
     }
 
     function advance() {
+      if (!hasStarted) {
+        return;
+      }
+      if (performance.now() < advanceLockedUntil) return;
       if (currentMode() === "future") {
         resetExperience();
         return;
@@ -427,6 +792,9 @@
       updateContent();
       dropToKeepRatio(steps[stepIndex].keep);
       refreshRemainingCloudMotion();
+      if (currentMode() === "meet") {
+        enterMeetScene();
+      }
       if (currentMode() === "future") {
         enterFutureCloud();
       }
@@ -436,23 +804,23 @@
       ctx.clearRect(0, 0, width, height);
 
       const gradient = ctx.createLinearGradient(0, 0, 0, height);
-      gradient.addColorStop(0, "rgba(250, 252, 255, 0.46)");
-      gradient.addColorStop(0.38, "rgba(224, 235, 255, 0.34)");
+      gradient.addColorStop(0, "rgba(188, 202, 242, 0.48)");
+      gradient.addColorStop(0.38, "rgba(202, 214, 247, 0.36)");
       gradient.addColorStop(0.72, "rgba(240, 229, 255, 0.28)");
       gradient.addColorStop(1, "rgba(248, 242, 255, 0.34)");
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, width, height);
 
       const glow = ctx.createRadialGradient(width / 2, height * 0.34, 10, width / 2, height * 0.34, width * 0.74);
-      glow.addColorStop(0, "rgba(255, 255, 255, 0.62)");
-      glow.addColorStop(0.38, "rgba(224, 234, 255, 0.28)");
-      glow.addColorStop(0.62, "rgba(238, 222, 255, 0.2)");
+      glow.addColorStop(0, "rgba(238, 242, 255, 0.38)");
+      glow.addColorStop(0.38, "rgba(198, 213, 249, 0.24)");
+      glow.addColorStop(0.62, "rgba(226, 210, 250, 0.18)");
       glow.addColorStop(1, "rgba(255, 255, 255, 0)");
       ctx.fillStyle = glow;
       ctx.fillRect(0, 0, width, height);
 
       const sideGlow = ctx.createRadialGradient(width * 0.8, height * 0.22, 5, width * 0.8, height * 0.22, width * 0.5);
-      sideGlow.addColorStop(0, "rgba(194, 176, 244, 0.26)");
+      sideGlow.addColorStop(0, "rgba(166, 145, 226, 0.3)");
       sideGlow.addColorStop(1, "rgba(194, 176, 244, 0)");
       ctx.fillStyle = sideGlow;
       ctx.fillRect(0, 0, width, height);
@@ -554,6 +922,35 @@
       ctx.restore();
     }
 
+    function drawMeetEchoCloud(time) {
+      if (currentMode() !== "meet" || !meetEchoBalls.length) return;
+      const reveal = Math.max(0, Math.min(1, (settleTick - 80) / 140));
+      if (reveal <= 0) return;
+      const scale = 0.18 + reveal * 1.04;
+
+      meetEchoBalls.forEach((ball) => {
+        const driftX = Math.sin(time * 0.0008 + ball.phase) * 1.8;
+        const driftY = Math.cos(time * 0.0007 + ball.phase) * 1.3;
+        const x = width / 2 + (ball.baseX - width / 2) * scale + driftX;
+        const y = cloudCenterY() + (ball.baseY - cloudCenterY()) * scale + driftY;
+        const r = ball.r * (0.28 + reveal * 0.52);
+
+        ctx.save();
+        ctx.globalAlpha = ball.alpha * reveal * 0.62;
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = "rgba(142, 151, 218, 0.2)";
+        const radial = ctx.createRadialGradient(x - r * 0.35, y - r * 0.35, 1, x, y, r * 1.7);
+        radial.addColorStop(0, "#ffffff");
+        radial.addColorStop(0.55, ball.color);
+        radial.addColorStop(1, "rgba(111, 122, 176, 0.22)");
+        ctx.fillStyle = radial;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+    }
+
     function drawBall(ball) {
       if (ball.state === "gone") return;
       const radius = ball.state === "cloud" ? ball.r * (1 + (cloudZoom() - 1) * 0.55) : ball.r;
@@ -561,10 +958,10 @@
       ctx.save();
       ctx.globalAlpha = ball.alpha;
       if (ball.state === "gold") {
-        ctx.shadowBlur = currentMode() === "meet" || currentMode() === "future" ? 34 : 18;
+        ctx.shadowBlur = currentMode() === "meet" || currentMode() === "future" ? 26 : 14;
         ctx.shadowColor = "rgba(246, 207, 115, 0.92)";
       } else {
-        ctx.shadowBlur = 16;
+        ctx.shadowBlur = 10;
         ctx.shadowColor = "rgba(112, 126, 184, 0.24)";
       }
 
@@ -586,34 +983,12 @@
     }
 
     function drawGoldConnection() {
-      if (currentMode() !== "meet") return;
-      const goldBalls = balls.filter((ball) => ball.state === "gold");
-      if (goldBalls.length < 2) return;
-      const [a, b] = goldBalls;
-      const alpha = Math.min(1, settleTick / 90);
-      ctx.save();
-      ctx.globalAlpha = alpha;
-      ctx.strokeStyle = "rgba(239, 198, 99, 0.86)";
-      ctx.lineWidth = 2;
-      ctx.shadowBlur = 20;
-      ctx.shadowColor = "rgba(239, 198, 99, 0.82)";
-      ctx.beginPath();
-      ctx.moveTo(a.x, a.y);
-      ctx.lineTo(b.x, b.y);
-      ctx.stroke();
-      ctx.restore();
-
-      ctx.save();
-      ctx.globalAlpha = alpha;
-      ctx.fillStyle = "rgba(54, 47, 74, 0.82)";
-      ctx.font = `${Math.max(16, Math.min(22, width * 0.038))}px Microsoft YaHei, Arial`;
-      ctx.textAlign = "center";
-      ctx.fillText("在所有可能性中，我们相遇了", width / 2, height * 0.64);
-      ctx.restore();
+      return;
     }
 
     function animate(time) {
       drawBackground();
+      drawMeetEchoCloud(time);
       if (currentMode() === "future") {
         futureBalls.forEach((ball) => updateFutureBall(ball, time));
         futureBalls
@@ -628,8 +1003,11 @@
       requestAnimationFrame(animate);
     }
 
+    startButton.addEventListener("click", startStory);
     button.addEventListener("click", advance);
-    canvas.addEventListener("click", advance);
+    canvas.addEventListener("click", () => {
+      if (hasStarted) advance();
+    });
     window.addEventListener("resize", resizeCanvas);
 
     updateContent();
