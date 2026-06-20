@@ -190,7 +190,7 @@
       position: absolute;
       left: 14px;
       right: 14px;
-      bottom: max(14px, env(safe-area-inset-bottom));
+      bottom: calc(max(14px, env(safe-area-inset-bottom)) + 10px);
       z-index: 2;
       padding: 8px 4px 0;
       border: 0;
@@ -347,6 +347,7 @@
       enterY: 18,
       exitY: -12,
       enterScale: 0.94,
+      peakScale: 1.35,
       exitScale: 1.04
     };
 
@@ -361,6 +362,7 @@
         enterY: 18,
         exitY: -12,
         enterScale: 0.94,
+        peakScale: 1.12,
         exitScale: 1.04
       },
       2: {
@@ -373,6 +375,7 @@
         enterY: 18,
         exitY: -12,
         enterScale: 0.94,
+        peakScale: 1.12,
         exitScale: 1.04
       },
       3: {
@@ -385,6 +388,7 @@
         enterY: 18,
         exitY: -12,
         enterScale: 0.94,
+        peakScale: 1.12,
         exitScale: 1.04
       },
       4: {
@@ -397,6 +401,7 @@
         enterY: 18,
         exitY: -12,
         enterScale: 0.94,
+        peakScale: 1.12,
         exitScale: 1.04
       },
       5: {
@@ -409,6 +414,7 @@
         enterY: 18,
         exitY: -12,
         enterScale: 0.94,
+        peakScale: 1.12,
         exitScale: 1.04
       }
     };
@@ -473,8 +479,8 @@
       }
     ];
 
-    const palette = ["#ffffff", "#f9fbff", "#dfe9ff", "#d7defa", "#eee3ff", "#f7e9ff", "#e7f5ff"];
-    const gold = ["#f7d984", "#f7d984"];
+    const palette = ["#eef4ff", "#e8efff", "#dfe9ff", "#d7defa", "#eee3ff", "#f7e9ff", "#e7f5ff"];
+    const gold = ["#e9f1fb", "#e9f1fb"];
     let width = 0;
     let height = 0;
     let dpr = 1;
@@ -537,6 +543,7 @@
         const duration = settings.fadeInMs + settings.holdMs + settings.fadeOutMs;
         const fadeInPoint = settings.fadeInMs / duration;
         const holdPoint = (settings.fadeInMs + settings.holdMs) / duration;
+        const peakScale = settings.peakScale ?? 1;
         const memoryTransform = (y, scale) => {
           const translate = isCenter ? `translate3d(-50%, ${y}px, 0)` : `translate3d(0, ${y}px, 0)`;
           return `${translate} rotate(${rotate}) scale(${scale})`;
@@ -554,12 +561,12 @@
             },
             {
               opacity: peakOpacity,
-              transform: memoryTransform(0, 1),
+              transform: memoryTransform(0, peakScale),
               offset: fadeInPoint
             },
             {
               opacity: peakOpacity,
-              transform: memoryTransform(0, 1),
+              transform: memoryTransform(0, peakScale),
               offset: holdPoint
             },
             {
@@ -958,27 +965,64 @@
       ctx.save();
       ctx.globalAlpha = ball.alpha;
       if (ball.state === "gold") {
-        ctx.shadowBlur = currentMode() === "meet" || currentMode() === "future" ? 26 : 14;
-        ctx.shadowColor = "rgba(246, 207, 115, 0.92)";
+        ctx.shadowBlur = currentMode() === "meet" || currentMode() === "future" ? 34 : 20;
+        ctx.shadowColor = "rgba(244, 249, 255, 1)";
       } else {
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = "rgba(112, 126, 184, 0.24)";
+        ctx.shadowBlur = 7;
+        ctx.shadowColor = "rgba(112, 126, 184, 0.16)";
       }
 
-      const radial = ctx.createRadialGradient(ball.x - radius * 0.35, ball.y - radius * 0.35, 1, ball.x, ball.y, radius * 1.6);
       if (ball.state === "gold") {
-        radial.addColorStop(0, "#fff8d7");
-        radial.addColorStop(0.62, ball.color);
-        radial.addColorStop(1, "#c89d43");
+        const halo = ctx.createRadialGradient(ball.x, ball.y, radius * 0.65, ball.x, ball.y, radius * 2.55);
+        halo.addColorStop(0, "rgba(255, 255, 255, 0.42)");
+        halo.addColorStop(0.48, "rgba(202, 222, 255, 0.34)");
+        halo.addColorStop(1, "rgba(202, 222, 255, 0)");
+        ctx.fillStyle = halo;
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, radius * 2.55, 0, Math.PI * 2);
+        ctx.fill();
+
+        const metal = ctx.createRadialGradient(ball.x - radius * 0.42, ball.y - radius * 0.48, 1, ball.x + radius * 0.1, ball.y + radius * 0.18, radius * 1.28);
+        metal.addColorStop(0, "#ffffff");
+        metal.addColorStop(0.18, "#f7fbff");
+        metal.addColorStop(0.36, "#ccd8e7");
+        metal.addColorStop(0.68, ball.color);
+        metal.addColorStop(0.86, "#90a3bf");
+        metal.addColorStop(1, "#eef5ff");
+        ctx.fillStyle = metal;
       } else {
-        radial.addColorStop(0, "#ffffff");
+        const radial = ctx.createRadialGradient(ball.x - radius * 0.35, ball.y - radius * 0.35, 1, ball.x, ball.y, radius * 1.6);
+        radial.addColorStop(0, "#f7fbff");
         radial.addColorStop(0.52, ball.color);
-        radial.addColorStop(1, "rgba(111, 122, 176, 0.42)");
+        radial.addColorStop(1, "rgba(111, 122, 176, 0.22)");
+        ctx.fillStyle = radial;
       }
-      ctx.fillStyle = radial;
       ctx.beginPath();
       ctx.arc(ball.x, ball.y, radius, 0, Math.PI * 2);
       ctx.fill();
+
+      if (ball.state === "gold") {
+        const spin = Math.sin(settleTick * 0.22 + ball.phase + ball.goldIndex * 1.9) * 0.938;
+        const highlightX = ball.x - radius * (0.33 + Math.cos(spin) * 0.08);
+        const highlightY = ball.y - radius * (0.43 + Math.sin(spin) * 0.06);
+
+        ctx.globalAlpha = Math.min(1, ball.alpha * 0.88);
+        ctx.fillStyle = "rgba(255, 255, 255, 0.94)";
+        ctx.beginPath();
+        ctx.ellipse(highlightX, highlightY, radius * 0.28, radius * 0.14, -0.7 + spin, 0, Math.PI * 2);
+        ctx.fill();
+
+        const sparkleAlpha = 0.5 + Math.sin(settleTick * 0.075 + ball.phase) * 0.18;
+        ctx.globalAlpha = Math.max(0.12, sparkleAlpha);
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.92)";
+        ctx.lineWidth = Math.max(1, radius * 0.08);
+        ctx.beginPath();
+        ctx.moveTo(highlightX - radius * 0.11, highlightY - radius * 0.08);
+        ctx.lineTo(highlightX + radius * 0.25, highlightY - radius * 0.08);
+        ctx.moveTo(highlightX + radius * 0.07, highlightY - radius * 0.26);
+        ctx.lineTo(highlightX + radius * 0.07, highlightY + radius * 0.1);
+        ctx.stroke();
+      }
       ctx.restore();
     }
 
