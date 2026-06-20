@@ -3,3 +3,4 @@ docs/PRD*.md
 PRD*.md
 start-local-portal.bat
 start-local-portal.ps1
+local-portal.log
